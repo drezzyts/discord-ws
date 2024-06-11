@@ -11,7 +11,7 @@ export default class DiscordWebSocket extends EventEmitter {
   }
 
   public async connect() {
-    for (let id = 1; id <= this.client.options.shards!; id++) {
+    for (let id = 0; id < this.client.options.shards!; id++) {
       const shard = new Shard({ client: this.client, discordWs: this, id });
       await shard.connect();
       this.shards.set(id, shard);
