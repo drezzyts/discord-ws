@@ -20,8 +20,8 @@ export default class DiscordWebSocket extends EventEmitter {
   }
 
   public async updatePresence(data: ClientPresence): Promise<boolean> {
-    for (const id of this.shards.keys()) {
-      const result = await this.shards.get(id)!.updatePresence(data);
+    for (const shard of this.shards.values()) {
+      const result = await shard.updatePresence(data);
       if (!result) return false;
     }
 
