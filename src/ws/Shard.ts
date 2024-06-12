@@ -9,19 +9,25 @@ import {
   GatewayIdentify, 
   GatewayIdentifyData, 
   GatewayOpcodes, 
-  GatewayReceivePayload 
+  GatewayReceivePayload,
+  GatewayUpdatePresence,
+  PresenceUpdateStatus,
 } from 'discord-api-types/v10';
+import { ClientPresence } from '../types/client';
 
 export default class Shard extends EventEmitter {
   private ws?: WebSocket;
   private lastHeartbeatTimestamp: number;
   private heartbeatInterval: number;
+  private offlineTimestamp: number;
+
   public ping: number;
 
   public constructor(public options: ShardOptions) {
     super();
 
     this.lastHeartbeatTimestamp = 0;
+    this.offlineTimestamp = 0;
     this.heartbeatInterval = 0;
     this.ping = 0;
   }
@@ -30,6 +36,25 @@ export default class Shard extends EventEmitter {
     this.ws = new WebSocket(Constants.GATEWAY_URL);
     this.ws.on('open', this.gatewayOpenEvent.bind(this));
     this.ws.on('close', this.gatewayCloseEvent.bind(this));
+  }
+
+  public async updatePresence(data: ClientPresence): Promise<boolean> {
+    if (!this.ws) return false;
+    if (data.status == PresenceUpdateStatus.Idle) this.offlineTimestamp = Date.now();
+
+    const payload: GatewayUpdatePresence = {
+      op: GatewayOpcodes.PresenceUpdate,
+      d: {
+        activities: data.activities || [],
+        afk: data.status == PresenceUpdateStatus.Idle,
+        since: data.status == PresenceUpdateStatus.Idle ? this.offlineTimestamp : null,
+        status: data.status
+      },
+    };
+
+    this.ws.send(JSON.stringify(payload));
+    
+    return true;
   }
 
   private gatewayOpenEvent() {
@@ -48,7 +73,7 @@ export default class Shard extends EventEmitter {
 
         if (this.options.client.connectedShards >= this.options.client.options.shards!) {
           this.options.client.connectionTimestamp = Date.now();
-          this.options.client.emit('connect', payload.d);
+          this.options.client.emit('connect', payload.d.user);
         }
 
         break;
@@ -94,7 +119,7 @@ export default class Shard extends EventEmitter {
       shard: [this.options.id, this.options.client.options.shards!],
       token: this.options.client.options.token,
       properties: {
-        os: 'linux',
+        os: Constants.IDENTIFY_OS,
         browser: Constants.IDENTIFY_BROWSER,
         device: Constants.IDENTIFY_DEVICE
       }

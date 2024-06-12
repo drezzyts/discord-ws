@@ -1,6 +1,7 @@
 import { EventEmitter } from "stream";
 import Shard from "./Shard";
 import Client from "../structs/Client";
+import { ClientPresence } from "../types/client";
 
 export default class DiscordWebSocket extends EventEmitter {
   public shards: Map<number, Shard>;
@@ -16,5 +17,14 @@ export default class DiscordWebSocket extends EventEmitter {
       await shard.connect();
       this.shards.set(id, shard);
     }
+  }
+
+  public async updatePresence(data: ClientPresence): Promise<boolean> {
+    for (const id of this.shards.keys()) {
+      const result = await this.shards.get(id)!.updatePresence(data);
+      if (!result) return false;
+    }
+
+    return true;
   }
 }

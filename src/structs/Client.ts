@@ -1,6 +1,7 @@
 import { EventEmitter } from "stream";
-import { ClientOptions } from "../types/client";
+import { ClientOptions, ClientPresence } from "../types/client";
 import DiscordWebSocket from "../ws/WebSocket";
+import { GatewayPresenceUpdate } from "discord-api-types/v10";
 
 export default class Client extends EventEmitter {
   public connectionTimestamp: number;
@@ -23,5 +24,9 @@ export default class Client extends EventEmitter {
     this.options.token = token;
     this.ws = new DiscordWebSocket(this);
     await this.ws.connect();
+  }
+
+  public async updatePresence(data: ClientPresence): Promise<boolean> {
+    return await this.ws!.updatePresence(data);
   }
 }
