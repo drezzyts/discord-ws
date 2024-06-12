@@ -17,11 +17,12 @@ client.connect();
 
 client.on('shardConnect', (_, id) => {
   console.log(`[debug] Shard Connected, Id: ${id} !`);
-  client.ws!.shards.get(id)!.updatePresence({
-    status: PresenceUpdateStatus.DoNotDisturb
-  });
 });
 
-client.on('connect', async (user) => {
+client.on('connect', async () => {
   console.log(`[debug] Client Connected, Shards Connected: ${client.connectedShards}`);
+  await client.updatePresence({
+    status: PresenceUpdateStatus.Idle,
+    activities: [{ name: "Testing.", type: ActivityType.Watching }]
+  });
 })
